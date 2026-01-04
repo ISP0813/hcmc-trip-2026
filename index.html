@@ -9,7 +9,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -29,13 +29,18 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
         .japanese-shadow {
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        /* 預設隱藏 toast，避免 Vue 未載入時顯示亂碼 */
+        [v-cloak] {
+            display: none;
+        }
+        #toast-container {
+            display: none;
+        }
+        #toast-container.active {
+            display: flex;
         }
     </style>
     
@@ -57,7 +62,7 @@
 </head>
 <body class="text-sumi h-screen flex flex-col overflow-hidden max-w-md mx-auto shadow-2xl bg-paper">
 
-    <div id="app" class="flex flex-col h-full">
+    <div id="app" class="flex flex-col h-full" v-cloak>
 
         <header class="pt-12 pb-4 px-6 bg-paper sticky top-0 z-20">
             <div class="flex justify-between items-center">
@@ -65,7 +70,7 @@
                     <h1 class="text-2xl font-bold tracking-tight">HCMC <span class="text-matcha">2026</span></h1>
                     <p class="text-xs text-gray-500 mt-1">1月22日 - 1月26日</p>
                 </div>
-                <div class="bg-stone-200 rounded-full p-2" @click="toggleWeather">
+                <div class="bg-stone-200 rounded-full p-2 cursor-pointer" @click="toggleWeather">
                     <i class="fa-solid fa-cloud-sun text-xl text-gray-600"></i>
                 </div>
             </div>
@@ -222,7 +227,7 @@
             </button>
         </nav>
         
-        <div v-if="toast.show" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-sumi text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 transition-all duration-300">
+        <div id="toast-container" :class="{ active: toast.show }" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-sumi text-white px-6 py-3 rounded-full shadow-2xl z-50 items-center gap-3 transition-all duration-300">
             <i class="fa-solid fa-circle-check text-matcha"></i>
             <span class="text-sm">{{ toast.message }}</span>
         </div>
@@ -230,77 +235,173 @@
     </div>
 
     <script>
-        const { createApp, ref, computed } = Vue;
+        // 確保 Vue 已載入
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Vue === 'undefined') {
+                alert('App 載入失敗：請檢查網路連線 (Vue.js 無法載入)');
+                return;
+            }
 
-        createApp({
-            setup() {
-                const currentView = ref('itinerary');
-                const selectedDayIndex = ref(0);
-                const showWeather = ref(true);
-                const toast = ref({ show: false, message: '' });
-                
-                // Expense Tracker Logic
-                const newExpenseName = ref('');
-                const newExpenseAmount = ref('');
-                const expenses = ref([
-                    { name: '機場換匯預估', amount: 2500000 }
-                ]);
+            const { createApp, ref, computed } = Vue;
 
-                const addExpense = () => {
-                    if(newExpenseName.value && newExpenseAmount.value) {
-                        expenses.value.unshift({
-                            name: newExpenseName.value,
-                            amount: newExpenseAmount.value
+            createApp({
+                setup() {
+                    const currentView = ref('itinerary');
+                    const selectedDayIndex = ref(0);
+                    const showWeather = ref(true);
+                    const toast = ref({ show: false, message: '' });
+                    
+                    // Expense Tracker Logic
+                    const newExpenseName = ref('');
+                    const newExpenseAmount = ref('');
+                    const expenses = ref([
+                        { name: '機場換匯預估', amount: 2500000 }
+                    ]);
+
+                    const addExpense = () => {
+                        if(newExpenseName.value && newExpenseAmount.value) {
+                            expenses.value.unshift({
+                                name: newExpenseName.value,
+                                amount: newExpenseAmount.value
+                            });
+                            newExpenseName.value = '';
+                            newExpenseAmount.value = '';
+                        }
+                    };
+
+                    const totalSpent = computed(() => {
+                        return expenses.value.reduce((acc, item) => acc + item.amount, 0);
+                    });
+
+                    // Itinerary Data
+                    const itinerary = [
+                        {
+                            dateShort: "1/22 (四)",
+                            events: [
+                                { time: "21:25", title: "抵達 SGN 機場", type: "transport", tag: "VIP通關", desc: "尋找舉牌人員走 VIP 通道。出關後記得先不上車，先換錢。", address: "Tan Son Nhat International Airport" },
+                                { time: "21:50", title: "機場換匯 & 網卡", type: "money", tag: "必辦", desc: "換 <b>$100 USD</b> 備用 (小費/車資)。確認網卡開通。", address: "Currency Exchange Counter, Arrivals Hall" },
+                                { time: "22:40", title: "飯店 Check-in", type: "hotel", tag: "LA PAIX", desc: "出示合併訂單。放下行李，準備宵夜。", address: "LA PAIX SÀI GÒN" },
+                                { time: "23:00", title: "Phở Quỳnh 宵夜", type: "food", tag: "必吃", desc: "范五老街名店。推薦：<b>生牛肉河粉 (Phở Tái)</b>。若太累可叫 Grab Food。", address: "323 Phạm Ngũ Lão, District 1" }
+                            ]
+                        },
+                        {
+                            dateShort: "1/23 (五)",
+                            events: [
+                                { time: "09:30", title: "Phở Hòa Pasteur", type: "food", tag: "老店", desc: "口感較清淡，配油條吃是道地吃法。", address: "260C Pasteur, District 3" },
+                                { time: "10:30", title: "粉紅教堂", type: "sight", tag: "拍照", desc: "Tân Định Church。僅在對面馬路或旁邊咖啡廳拍照，不需入內。", address: "289 Hai Bà Trưng, District 3" },
+                                { time: "11:30", title: "Ha Tam Jewelry 換匯", type: "money", tag: "匯率優", desc: "濱城市場旁金飾店。準備好美金，換足夠的越盾。", address: "2 Nguyễn An Ninh, District 1" },
+                                { time: "12:30", title: "抵達 Le Corto", type: "transport", desc: "提早15分鐘抵達確認訂位。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
+                                { time: "12:45", title: "Le Corto 法式午餐", type: "food", tag: "重點行程", desc: "<b>已改期確認</b>。主廚 Sakal 曾任職索菲特。推薦必點：<b>威靈頓牛排</b>。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
+                                { time: "15:00", title: "King Luxury 洗頭", type: "relax", tag: "90mins", desc: "越式洗頭全套服務。含洗臉、按摩、採耳。", address: "222 Bùi Viện, District 1 (請確認分店)" },
+                                { time: "17:00", title: "咖啡公寓 & 步行街", type: "sight", desc: "阮惠步行街散步。推薦 <b>% Arabica</b> 或老舊公寓內的特色咖啡廳。", address: "42 Nguyễn Huệ, District 1" },
+                                { time: "18:30", title: "Pizza 4P's", type: "food", tag: "人氣", desc: "濱城市場店。必點：<b>Burrata Cheese Pizza</b> (整顆布拉塔起司)。", address: "8 Thủ Khoa Huân, District 1" },
+                                { time: "20:30", title: "日本街 & Cherry", type: "night", tag: "夜生活", desc: "Le Thanh Ton 區域探索。", address: "Lê Thánh Tôn, District 1" }
+                            ]
+                        },
+                        {
+                            dateShort: "1/24 (六)",
+                            events: [
+                                { time: "10:00", title: "Bánh Mì Huynh Hoa", type: "food", tag: "最強法包", desc: "<b>料超級多</b>，建議兩個人分食或當點心，不要吃太飽以免影響午餐。", address: "26 Lê Thị Riêng, District 1" },
+                                { time: "11:00", title: "安東市場 & 天后宮", type: "shop", tag: "買腰果", desc: "第五郡華人區。買乾貨記得<b>現金殺價</b> (至少從7-8折喊起)。", address: "An Dong Market, District 5" },
+                                { time: "13:00", title: "Wrap & Roll", type: "food", tag: "清爽", desc: "專吃生春捲，清爽不油膩，為晚上的龍蝦保留戰力。", address: "Vincom Center 或 mPlaza 分店" },
+                                { time: "15:00", title: "Satra Mart 採購", type: "shop", tag: "土特產", desc: "Lucky Plaza 內。買：河粉泡麵、G7咖啡、綠豆糕。", address: "38 Nguyễn Huệ (Lucky Plaza)" },
+                                { time: "16:00", title: "維東酒店 按摩", type: "relax", desc: "老牌按摩，逛累了剛好去二樓休息。", address: "275A Phạm Ngũ Lão (Vien Dong Hotel)" },
+                                { time: "18:00", title: "Nikko Hotel 龍蝦吃到飽", type: "food", tag: "高潮", desc: "<b>已改期確認</b>。La Brasserie 餐廳。主攻：<b>波士頓龍蝦</b> (多種口味任點)、生蠔、鵝肝。", address: "235 Nguyen Van Cu, District 1" }
+                            ]
+                        },
+                        {
+                            dateShort: "1/25 (日)",
+                            events: [
+                                { time: "上午", title: "腸胃公休", type: "relax", tag: "休息", desc: "睡到自然醒。多喝水，讓身體代謝昨晚的海鮮大餐。", address: "" },
+                                { time: "12:00", title: "書街咖啡 / 麥當勞", type: "food", desc: "隨意輕食。越南麥當勞有當地限定米飯特餐。", address: "Nguyen Van Binh Book Street" },
+                                { time: "13:00", title: "黃金三角古蹟", type: "sight", tag: "經典", desc: "紅教堂 (維修中看外觀) -> 中央郵局 (寄明信片) -> 書街。", address: "2 Công xã Paris, District 1" },
+                                { time: "14:30", title: "胡志明市美術博物館", type: "sight", tag: "好拍", desc: "鵝黃色法式建築，前身為華商「黃叔璡」豪宅。<b>有電梯、冷氣</b>，逛起來很舒服。", address: "97A Phó Đức Chính, District 1" },
+                                { time: "16:00", title: "Miu Miu Spa 2", type: "relax", tag: "日式指壓", desc: "服務品質最穩定的按摩店之一。結束後一身輕。", address: "2B Chu Mạnh Trinh, District 1" },
+                                { time: "18:00", title: "Bếp Mẹ Ỉn (胖媽廚房)", type: "food", tag: "必吃", desc: "隱身巷弄內。必點：<b>越南煎餅 (Bánh Xèo)</b>、竹筒飯。", address: "136 Lê Thánh Tôn, District 1" }
+                            ]
+                        },
+                        {
+                            dateShort: "1/26 (一)",
+                            events: [
+                                { time: "09:30", title: "Phở Hồng", type: "food", tag: "最後一碗", desc: "飯店對面。湯頭鮮甜，吃飽準備去機場。", address: "76 Hai Bà Trưng (可能需再確認地址或當地導航)" },
+                                { time: "10:45", title: "退房 & 前往機場", type: "transport", desc: "搭乘 Grab 前往 SGN 機場。", address: "Tan Son Nhat International Airport" },
+                                { time: "11:30", title: "機場 VIP 送機", type: "transport", tag: "VIP", desc: "與 VIP 客服會合，協助辦理登機與通關。", address: "SGN International Departure" },
+                                { time: "13:35", title: "起飛 VJ842", type: "transport", tag: "回家", desc: "平安賦歸。", address: "" }
+                            ]
+                        }
+                    ];
+
+                    const currentDayEvents = computed(() => {
+                        return itinerary[selectedDayIndex.value].events;
+                    });
+
+                    const getCategoryColor = (type) => {
+                        const map = {
+                            food: 'bg-sakura',
+                            sight: 'bg-matcha',
+                            transport: 'bg-blue-400',
+                            relax: 'bg-purple-400',
+                            money: 'bg-yellow-400',
+                            hotel: 'bg-indigo-400',
+                            shop: 'bg-orange-400',
+                            night: 'bg-pink-600'
+                        };
+                        return map[type] || 'bg-gray-400';
+                    };
+
+                    const highlightText = (text) => {
+                        if (!text) return '';
+                        return text.replace(/<b>(.*?)<\/b>/g, '<span class="font-bold text-sumi bg-yellow-100 px-1 rounded">$1</span>');
+                    };
+
+                    const copyToClipboard = (text) => {
+                        if(!text) return;
+                        navigator.clipboard.writeText(text).then(() => {
+                            showToast(`已複製：${text}`);
+                        }).catch(() => {
+                            // 某些瀏覽器不支援 clipboard API 時的備案
+                            const textarea = document.createElement('textarea');
+                            textarea.value = text;
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textarea);
+                            showToast(`已複製：${text}`);
                         });
-                        newExpenseName.value = '';
-                        newExpenseAmount.value = '';
+                    };
+
+                    const showToast = (msg) => {
+                        toast.value.message = msg;
+                        toast.value.show = true;
+                        setTimeout(() => {
+                            toast.value.show = false;
+                        }, 2000);
+                    };
+                    
+                    const toggleWeather = () => {
+                        showWeather.value = !showWeather.value;
                     }
-                };
 
-                const totalSpent = computed(() => {
-                    return expenses.value.reduce((acc, item) => acc + item.amount, 0);
-                });
-
-                // Itinerary Data with AI Enrichment
-                const itinerary = [
-                    {
-                        dateShort: "1/22 (四)",
-                        events: [
-                            { time: "21:25", title: "抵達 SGN 機場", type: "transport", tag: "VIP通關", desc: "尋找舉牌人員走 VIP 通道。出關後記得先不上車，先換錢。", address: "Tan Son Nhat International Airport" },
-                            { time: "21:50", title: "機場換匯 & 網卡", type: "money", tag: "必辦", desc: "換 <b>$100 USD</b> 備用 (小費/車資)。確認網卡開通。", address: "Currency Exchange Counter, Arrivals Hall" },
-                            { time: "22:40", title: "飯店 Check-in", type: "hotel", tag: "LA PAIX", desc: "出示合併訂單。放下行李，準備宵夜。", address: "LA PAIX SÀI GÒN" },
-                            { time: "23:00", title: "Phở Quỳnh 宵夜", type: "food", tag: "必吃", desc: "范五老街名店。推薦：<b>生牛肉河粉 (Phở Tái)</b>。若太累可叫 Grab Food。", address: "323 Phạm Ngũ Lão, District 1" }
-                        ]
-                    },
-                    {
-                        dateShort: "1/23 (五)",
-                        events: [
-                            { time: "09:30", title: "Phở Hòa Pasteur", type: "food", tag: "老店", desc: "口感較清淡，配油條吃是道地吃法。", address: "260C Pasteur, District 3" },
-                            { time: "10:30", title: "粉紅教堂", type: "sight", tag: "拍照", desc: "Tân Định Church。僅在對面馬路或旁邊咖啡廳拍照，不需入內。", address: "289 Hai Bà Trưng, District 3" },
-                            { time: "11:30", title: "Ha Tam Jewelry 換匯", type: "money", tag: "匯率優", desc: "濱城市場旁金飾店。準備好美金，換足夠的越盾。", address: "2 Nguyễn An Ninh, District 1" },
-                            { time: "12:30", title: "抵達 Le Corto", type: "transport", desc: "提早15分鐘抵達確認訂位。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
-                            { time: "12:45", title: "Le Corto 法式午餐", type: "food", tag: "重點行程", desc: "<b>已改期確認</b>。主廚 Sakal 曾任職索菲特。推薦必點：<b>威靈頓牛排</b>。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
-                            { time: "15:00", title: "King Luxury 洗頭", type: "relax", tag: "90mins", desc: "越式洗頭全套服務。含洗臉、按摩、採耳。", address: "222 Bùi Viện, District 1 (請確認分店)" },
-                            { time: "17:00", title: "咖啡公寓 & 步行街", type: "sight", desc: "阮惠步行街散步。推薦 <b>% Arabica</b> 或老舊公寓內的特色咖啡廳。", address: "42 Nguyễn Huệ, District 1" },
-                            { time: "18:30", title: "Pizza 4P's", type: "food", tag: "人氣", desc: "濱城市場店。必點：<b>Burrata Cheese Pizza</b> (整顆布拉塔起司)。", address: "8 Thủ Khoa Huân, District 1" },
-                            { time: "20:30", title: "日本街 & Cherry", type: "night", tag: "夜生活", desc: "Le Thanh Ton 區域探索。", address: "Lê Thánh Tôn, District 1" }
-                        ]
-                    },
-                    {
-                        dateShort: "1/24 (六)",
-                        events: [
-                            { time: "10:00", title: "Bánh Mì Huynh Hoa", type: "food", tag: "最強法包", desc: "<b>料超級多</b>，建議兩個人分食或當點心，不要吃太飽以免影響午餐。", address: "26 Lê Thị Riêng, District 1" },
-                            { time: "11:00", title: "安東市場 & 天后宮", type: "shop", tag: "買腰果", desc: "第五郡華人區。買乾貨記得<b>現金殺價</b> (至少從7-8折喊起)。", address: "An Dong Market, District 5" },
-                            { time: "13:00", title: "Wrap & Roll", type: "food", tag: "清爽", desc: "專吃生春捲，清爽不油膩，為晚上的龍蝦保留戰力。", address: "Vincom Center 或 mPlaza 分店" },
-                            { time: "15:00", title: "Satra Mart 採購", type: "shop", tag: "土特產", desc: "Lucky Plaza 內。買：河粉泡麵、G7咖啡、綠豆糕。", address: "38 Nguyễn Huệ (Lucky Plaza)" },
-                            { time: "16:00", title: "維東酒店 按摩", type: "relax", desc: "老牌按摩，逛累了剛好去二樓休息。", address: "275A Phạm Ngũ Lão (Vien Dong Hotel)" },
-                            { time: "18:00", title: "Nikko Hotel 龍蝦吃到飽", type: "food", tag: "高潮", desc: "<b>已改期確認</b>。La Brasserie 餐廳。主攻：<b>波士頓龍蝦</b> (多種口味任點)、生蠔、鵝肝。", address: "235 Nguyen Van Cu, District 1" }
-                        ]
-                    },
-                    {
-                        dateShort: "1/25 (日)",
-                        events: [
-                            { time: "上午", title: "腸胃公休", type: "relax", tag: "休息", desc: "睡到自然醒。多喝水，讓身體代謝昨晚的海鮮大餐。", address: "" },
-                            { time: "12:00", title: "書街咖啡 / 麥當勞", type: "food", desc: "隨意輕食。越南麥當勞有當地限定米飯特餐。", address: "Nguyen Van Binh Book Street" },
-                            { time: "13:00", title: "黃金三角古蹟", type: "sight", tag: "經典", desc: "紅教堂 (維修中看外觀) -> 中央郵局 (寄明信片) -> 書街。", address: "2 Công xã Paris, District 1" },
-                            { time: "14:30", title: "胡志明市美術博物館", type: "sight", tag: "好拍", desc: "鵝黃色法式建築，前身為華
+                    return {
+                        currentView,
+                        selectedDayIndex,
+                        itinerary,
+                        currentDayEvents,
+                        getCategoryColor,
+                        highlightText,
+                        copyToClipboard,
+                        toast,
+                        expenses,
+                        newExpenseName,
+                        newExpenseAmount,
+                        addExpense,
+                        totalSpent,
+                        showWeather,
+                        toggleWeather
+                    };
+                }
+            }).mount('#app');
+        });
+    </script>
+</body>
+</html>
