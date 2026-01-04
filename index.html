@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HCMC 2026 旅程</title>
+    
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkhDTUMgMjAyNiIsCiAgInNob3J0X25hbWUiOiAiVk4gVHJpcCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmRmYmY3IiwKICAidGhlbWVfY29sb3IiOiAiIzU3NTM0ZSIKfQ==">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Hide scrollbar for clean look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .japanese-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sumi': '#27272a', /* Zinc 800 */
+                        'paper': '#fdfbf7', /* Warm white */
+                        'matcha': '#4d7c0f', /* Green 700 */
+                        'sakura': '#fb7185', /* Rose 400 */
+                        'indigo-jp': '#4338ca', 
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="text-sumi h-screen flex flex-col overflow-hidden max-w-md mx-auto shadow-2xl bg-paper">
+
+    <div id="app" class="flex flex-col h-full">
+
+        <header class="pt-12 pb-4 px-6 bg-paper sticky top-0 z-20">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">HCMC <span class="text-matcha">2026</span></h1>
+                    <p class="text-xs text-gray-500 mt-1">1月22日 - 1月26日</p>
+                </div>
+                <div class="bg-stone-200 rounded-full p-2" @click="toggleWeather">
+                    <i class="fa-solid fa-cloud-sun text-xl text-gray-600"></i>
+                </div>
+            </div>
+            
+            <div v-if="showWeather" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-center justify-between text-sm animate-fade-in-down">
+                <div>
+                    <span class="font-bold block">胡志明市</span>
+                    <span class="text-gray-500">平均氣溫 24°C - 32°C</span>
+                </div>
+                <div class="text-right">
+                    <div class="text-blue-600 font-bold">乾季</div>
+                    <div class="text-xs text-gray-400">記得防曬補水</div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto no-scrollbar relative bg-stone-50">
+            
+            <div v-if="currentView === 'itinerary'" class="pb-24">
+                
+                <div class="flex overflow-x-auto no-scrollbar px-4 py-2 mb-2 sticky top-0 bg-stone-50/95 z-10 backdrop-blur-sm gap-3">
+                    <button 
+                        v-for="(day, index) in itinerary" 
+                        :key="index"
+                        @click="selectedDayIndex = index"
+                        class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 border"
+                        :class="selectedDayIndex === index ? 'bg-sumi text-white border-sumi shadow-lg' : 'bg-white text-gray-500 border-gray-200'"
+                    >
+                        <div class="text-xs opacity-80">{{ day.dateShort }}</div>
+                        <div>Day {{ index + 1 }}</div>
+                    </button>
+                </div>
+
+                <div class="px-5 mt-2 space-y-4">
+                    <div v-for="(event, eIndex) in currentDayEvents" :key="eIndex" class="relative pl-4 border-l-2 border-stone-200">
+                        <div class="absolute -left-[9px] top-3 w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                             :class="getCategoryColor(event.type)"></div>
+                        
+                        <div class="bg-white rounded-xl p-4 japanese-shadow mb-4 border border-stone-100">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="font-mono text-sm font-bold text-gray-400">{{ event.time }}</span>
+                                <span v-if="event.tag" class="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-bold tracking-wider uppercase border border-stone-200">
+                                    {{ event.tag }}
+                                </span>
+                            </div>
+                            
+                            <h3 class="font-bold text-lg leading-tight mb-1">{{ event.title }}</h3>
+                            
+                            <p class="text-sm text-gray-600 mb-3 leading-relaxed">
+                                <span v-html="highlightText(event.desc)"></span>
+                            </p>
+
+                            <div v-if="event.address" class="flex items-center justify-between mt-3 pt-3 border-t border-dashed border-gray-100">
+                                <div class="text-xs text-gray-400 truncate max-w-[70%]">
+                                    <i class="fa-solid fa-location-dot mr-1"></i> {{ event.address }}
+                                </div>
+                                <button @click="copyToClipboard(event.address)" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-lg font-medium transition-colors">
+                                    複製地址
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center py-8 text-gray-400 text-sm">
+                    <p>— Day {{ selectedDayIndex + 1 }} 結束 —</p>
+                </div>
+            </div>
+
+            <div v-if="currentView === 'tools'" class="px-5 py-4 pb-24 space-y-6">
+                
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">✈️ 航班資訊</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400">去程 (1/22)</div>
+                                <div class="font-bold text-xl">VJ843</div>
+                                <div class="text-sm text-matcha">晚班抵達</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-400">抵達 SGN</div>
+                                <div class="font-bold">21:25</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400">回程 (1/26)</div>
+                                <div class="font-bold text-xl">VJ842</div>
+                                <div class="text-sm text-sakura">午後回程</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-400">起飛 SGN</div>
+                                <div class="font-bold">13:35</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">🏨 住宿資訊</h3>
+                    <div class="font-bold text-lg text-indigo-jp mb-1">LA PAIX SÀI GÒN</div>
+                    <p class="text-sm text-gray-500 mb-3">請出示合併訂單訊息進行 Check-in</p>
+                    <button @click="copyToClipboard('LA PAIX SÀI GÒN')" class="w-full py-2 bg-stone-100 text-stone-600 rounded-lg text-sm font-medium">複製飯店名稱</button>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2 flex justify-between">
+                        <span>💰 簡易記帳</span>
+                        <span class="text-matcha">{{ totalSpent.toLocaleString() }} VND</span>
+                    </h3>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <input v-model="newExpenseName" placeholder="項目" class="w-1/2 p-2 bg-stone-50 rounded-lg border border-stone-200 text-sm">
+                        <input v-model.number="newExpenseAmount" type="number" placeholder="金額 (VND)" class="w-1/3 p-2 bg-stone-50 rounded-lg border border-stone-200 text-sm">
+                        <button @click="addExpense" class="w-10 bg-sumi text-white rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+
+                    <div class="space-y-2 max-h-40 overflow-y-auto">
+                        <div v-for="(item, idx) in expenses" :key="idx" class="flex justify-between text-sm py-1 border-b border-dashed border-gray-100 last:border-0">
+                            <span>{{ item.name }}</span>
+                            <span class="font-mono">{{ item.amount.toLocaleString() }}</span>
+                        </div>
+                        <div v-if="expenses.length === 0" class="text-center text-gray-400 text-xs py-2">尚未新增項目</div>
+                    </div>
+                </div>
+
+                 <div class="bg-sakura/10 rounded-2xl p-5 border border-sakura/30">
+                    <h3 class="font-bold text-lg mb-2 text-sakura">🆘 緊急聯絡</h3>
+                    <ul class="text-sm space-y-2 text-gray-700">
+                        <li><span class="font-bold">報警：</span> 113</li>
+                        <li><span class="font-bold">急救：</span> 115</li>
+                        <li><span class="font-bold">台灣駐胡志明辦事處：</span> +84-903-927-019</li>
+                    </ul>
+                </div>
+
+            </div>
+
+        </main>
+
+        <nav class="bg-white border-t border-stone-200 px-6 py-3 flex justify-around items-center absolute bottom-0 w-full z-30 pb-6 safe-area-pb">
+            <button @click="currentView = 'itinerary'" class="flex flex-col items-center gap-1 w-16 transition-colors duration-300" :class="currentView === 'itinerary' ? 'text-sumi' : 'text-gray-300'">
+                <i class="fa-solid fa-map-location-dot text-xl"></i>
+                <span class="text-[10px] font-medium">行程</span>
+            </button>
+            
+            <div class="w-px h-8 bg-stone-100"></div>
+
+            <button @click="currentView = 'tools'" class="flex flex-col items-center gap-1 w-16 transition-colors duration-300" :class="currentView === 'tools' ? 'text-sumi' : 'text-gray-300'">
+                <i class="fa-solid fa-suitcase text-xl"></i>
+                <span class="text-[10px] font-medium">工具</span>
+            </button>
+        </nav>
+        
+        <div v-if="toast.show" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-sumi text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 transition-all duration-300">
+            <i class="fa-solid fa-circle-check text-matcha"></i>
+            <span class="text-sm">{{ toast.message }}</span>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const currentView = ref('itinerary');
+                const selectedDayIndex = ref(0);
+                const showWeather = ref(true);
+                const toast = ref({ show: false, message: '' });
+                
+                // Expense Tracker Logic
+                const newExpenseName = ref('');
+                const newExpenseAmount = ref('');
+                const expenses = ref([
+                    { name: '機場換匯預估', amount: 2500000 }
+                ]);
+
+                const addExpense = () => {
+                    if(newExpenseName.value && newExpenseAmount.value) {
+                        expenses.value.unshift({
+                            name: newExpenseName.value,
+                            amount: newExpenseAmount.value
+                        });
+                        newExpenseName.value = '';
+                        newExpenseAmount.value = '';
+                    }
+                };
+
+                const totalSpent = computed(() => {
+                    return expenses.value.reduce((acc, item) => acc + item.amount, 0);
+                });
+
+                // Itinerary Data with AI Enrichment
+                const itinerary = [
+                    {
+                        dateShort: "1/22 (四)",
+                        events: [
+                            { time: "21:25", title: "抵達 SGN 機場", type: "transport", tag: "VIP通關", desc: "尋找舉牌人員走 VIP 通道。出關後記得先不上車，先換錢。", address: "Tan Son Nhat International Airport" },
+                            { time: "21:50", title: "機場換匯 & 網卡", type: "money", tag: "必辦", desc: "換 <b>$100 USD</b> 備用 (小費/車資)。確認網卡開通。", address: "Currency Exchange Counter, Arrivals Hall" },
+                            { time: "22:40", title: "飯店 Check-in", type: "hotel", tag: "LA PAIX", desc: "出示合併訂單。放下行李，準備宵夜。", address: "LA PAIX SÀI GÒN" },
+                            { time: "23:00", title: "Phở Quỳnh 宵夜", type: "food", tag: "必吃", desc: "范五老街名店。推薦：<b>生牛肉河粉 (Phở Tái)</b>。若太累可叫 Grab Food。", address: "323 Phạm Ngũ Lão, District 1" }
+                        ]
+                    },
+                    {
+                        dateShort: "1/23 (五)",
+                        events: [
+                            { time: "09:30", title: "Phở Hòa Pasteur", type: "food", tag: "老店", desc: "口感較清淡，配油條吃是道地吃法。", address: "260C Pasteur, District 3" },
+                            { time: "10:30", title: "粉紅教堂", type: "sight", tag: "拍照", desc: "Tân Định Church。僅在對面馬路或旁邊咖啡廳拍照，不需入內。", address: "289 Hai Bà Trưng, District 3" },
+                            { time: "11:30", title: "Ha Tam Jewelry 換匯", type: "money", tag: "匯率優", desc: "濱城市場旁金飾店。準備好美金，換足夠的越盾。", address: "2 Nguyễn An Ninh, District 1" },
+                            { time: "12:30", title: "抵達 Le Corto", type: "transport", desc: "提早15分鐘抵達確認訂位。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
+                            { time: "12:45", title: "Le Corto 法式午餐", type: "food", tag: "重點行程", desc: "<b>已改期確認</b>。主廚 Sakal 曾任職索菲特。推薦必點：<b>威靈頓牛排</b>。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
+                            { time: "15:00", title: "King Luxury 洗頭", type: "relax", tag: "90mins", desc: "越式洗頭全套服務。含洗臉、按摩、採耳。", address: "222 Bùi Viện, District 1 (請確認分店)" },
+                            { time: "17:00", title: "咖啡公寓 & 步行街", type: "sight", desc: "阮惠步行街散步。推薦 <b>% Arabica</b> 或老舊公寓內的特色咖啡廳。", address: "42 Nguyễn Huệ, District 1" },
+                            { time: "18:30", title: "Pizza 4P's", type: "food", tag: "人氣", desc: "濱城市場店。必點：<b>Burrata Cheese Pizza</b> (整顆布拉塔起司)。", address: "8 Thủ Khoa Huân, District 1" },
+                            { time: "20:30", title: "日本街 & Cherry", type: "night", tag: "夜生活", desc: "Le Thanh Ton 區域探索。", address: "Lê Thánh Tôn, District 1" }
+                        ]
+                    },
+                    {
+                        dateShort: "1/24 (六)",
+                        events: [
+                            { time: "10:00", title: "Bánh Mì Huynh Hoa", type: "food", tag: "最強法包", desc: "<b>料超級多</b>，建議兩個人分食或當點心，不要吃太飽以免影響午餐。", address: "26 Lê Thị Riêng, District 1" },
+                            { time: "11:00", title: "安東市場 & 天后宮", type: "shop", tag: "買腰果", desc: "第五郡華人區。買乾貨記得<b>現金殺價</b> (至少從7-8折喊起)。", address: "An Dong Market, District 5" },
+                            { time: "13:00", title: "Wrap & Roll", type: "food", tag: "清爽", desc: "專吃生春捲，清爽不油膩，為晚上的龍蝦保留戰力。", address: "Vincom Center 或 mPlaza 分店" },
+                            { time: "15:00", title: "Satra Mart 採購", type: "shop", tag: "土特產", desc: "Lucky Plaza 內。買：河粉泡麵、G7咖啡、綠豆糕。", address: "38 Nguyễn Huệ (Lucky Plaza)" },
+                            { time: "16:00", title: "維東酒店 按摩", type: "relax", desc: "老牌按摩，逛累了剛好去二樓休息。", address: "275A Phạm Ngũ Lão (Vien Dong Hotel)" },
+                            { time: "18:00", title: "Nikko Hotel 龍蝦吃到飽", type: "food", tag: "高潮", desc: "<b>已改期確認</b>。La Brasserie 餐廳。主攻：<b>波士頓龍蝦</b> (多種口味任點)、生蠔、鵝肝。", address: "235 Nguyen Van Cu, District 1" }
+                        ]
+                    },
+                    {
+                        dateShort: "1/25 (日)",
+                        events: [
+                            { time: "上午", title: "腸胃公休", type: "relax", tag: "休息", desc: "睡到自然醒。多喝水，讓身體代謝昨晚的海鮮大餐。", address: "" },
+                            { time: "12:00", title: "書街咖啡 / 麥當勞", type: "food", desc: "隨意輕食。越南麥當勞有當地限定米飯特餐。", address: "Nguyen Van Binh Book Street" },
+                            { time: "13:00", title: "黃金三角古蹟", type: "sight", tag: "經典", desc: "紅教堂 (維修中看外觀) -> 中央郵局 (寄明信片) -> 書街。", address: "2 Công xã Paris, District 1" },
+                            { time: "14:30", title: "胡志明市美術博物館", type: "sight", tag: "好拍", desc: "鵝黃色法式建築，前身為華
