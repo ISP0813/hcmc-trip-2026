@@ -18,30 +18,19 @@
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f5f5f4; /* stone-100 */
+            background-color: #f5f5f4;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Hide scrollbar for clean look */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .japanese-shadow {
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-        /* 預設隱藏 toast，避免 Vue 未載入時顯示亂碼 */
-        [v-cloak] {
-            display: none;
-        }
-        #toast-container {
-            display: none;
-        }
-        #toast-container.active {
-            display: flex;
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .japanese-shadow { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); }
+        [v-cloak] { display: none; }
+        #toast-container { display: none; }
+        #toast-container.active { display: flex; }
+        
+        /* 圖片載入時的淡入效果 */
+        .fade-in-image { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
     
     <script>
@@ -49,10 +38,10 @@
             theme: {
                 extend: {
                     colors: {
-                        'sumi': '#27272a', /* Zinc 800 */
-                        'paper': '#fdfbf7', /* Warm white */
-                        'matcha': '#4d7c0f', /* Green 700 */
-                        'sakura': '#fb7185', /* Rose 400 */
+                        'sumi': '#27272a',
+                        'paper': '#fdfbf7',
+                        'matcha': '#4d7c0f',
+                        'sakura': '#fb7185',
                         'indigo-jp': '#4338ca', 
                     }
                 }
@@ -64,18 +53,18 @@
 
     <div id="app" class="flex flex-col h-full" v-cloak>
 
-        <header class="pt-12 pb-4 px-6 bg-paper sticky top-0 z-20">
+        <header class="pt-12 pb-4 px-6 bg-paper sticky top-0 z-20 shadow-sm">
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">HCMC <span class="text-matcha">2026</span></h1>
                     <p class="text-xs text-gray-500 mt-1">1月22日 - 1月26日</p>
                 </div>
-                <div class="bg-stone-200 rounded-full p-2 cursor-pointer" @click="toggleWeather">
+                <div class="bg-stone-200 rounded-full p-2 cursor-pointer hover:bg-stone-300 transition" @click="toggleWeather">
                     <i class="fa-solid fa-cloud-sun text-xl text-gray-600"></i>
                 </div>
             </div>
             
-            <div v-if="showWeather" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-center justify-between text-sm animate-fade-in-down">
+            <div v-if="showWeather" class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-center justify-between text-sm">
                 <div>
                     <span class="font-bold block">胡志明市</span>
                     <span class="text-gray-500">平均氣溫 24°C - 32°C</span>
@@ -91,57 +80,68 @@
             
             <div v-if="currentView === 'itinerary'" class="pb-24">
                 
-                <div class="flex overflow-x-auto no-scrollbar px-4 py-2 mb-2 sticky top-0 bg-stone-50/95 z-10 backdrop-blur-sm gap-3">
+                <div class="flex overflow-x-auto no-scrollbar px-4 py-3 mb-2 sticky top-0 bg-stone-50/95 z-10 backdrop-blur-sm gap-3 border-b border-stone-100">
                     <button 
                         v-for="(day, index) in itinerary" 
                         :key="index"
                         @click="selectedDayIndex = index"
                         class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 border"
-                        :class="selectedDayIndex === index ? 'bg-sumi text-white border-sumi shadow-lg' : 'bg-white text-gray-500 border-gray-200'"
+                        :class="selectedDayIndex === index ? 'bg-sumi text-white border-sumi shadow-md transform scale-105' : 'bg-white text-gray-500 border-gray-200'"
                     >
                         <div class="text-xs opacity-80">{{ day.dateShort }}</div>
                         <div>Day {{ index + 1 }}</div>
                     </button>
                 </div>
 
-                <div class="px-5 mt-2 space-y-4">
-                    <div v-for="(event, eIndex) in currentDayEvents" :key="eIndex" class="relative pl-4 border-l-2 border-stone-200">
+                <div class="px-5 mt-4 space-y-6">
+                    <div v-for="(event, eIndex) in currentDayEvents" :key="eIndex" class="relative pl-4 border-l-2 border-stone-200 pb-2">
                         <div class="absolute -left-[9px] top-3 w-4 h-4 rounded-full border-2 border-white shadow-sm"
                              :class="getCategoryColor(event.type)"></div>
                         
-                        <div class="bg-white rounded-xl p-4 japanese-shadow mb-4 border border-stone-100">
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="font-mono text-sm font-bold text-gray-400">{{ event.time }}</span>
-                                <span v-if="event.tag" class="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-bold tracking-wider uppercase border border-stone-200">
-                                    {{ event.tag }}
-                                </span>
-                            </div>
+                        <div class="bg-white rounded-xl overflow-hidden japanese-shadow border border-stone-100 group">
                             
-                            <h3 class="font-bold text-lg leading-tight mb-1">{{ event.title }}</h3>
-                            
-                            <p class="text-sm text-gray-600 mb-3 leading-relaxed">
-                                <span v-html="highlightText(event.desc)"></span>
-                            </p>
-
-                            <div v-if="event.address" class="flex items-center justify-between mt-3 pt-3 border-t border-dashed border-gray-100">
-                                <div class="text-xs text-gray-400 truncate max-w-[70%]">
-                                    <i class="fa-solid fa-location-dot mr-1"></i> {{ event.address }}
+                            <div v-if="event.image" class="h-32 w-full overflow-hidden relative">
+                                <img :src="event.image" class="w-full h-full object-cover fade-in-image group-hover:scale-105 transition-transform duration-700" alt="Spot Image">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                                <div class="absolute bottom-2 left-3 text-white text-xs font-bold px-2 py-1 bg-black/30 backdrop-blur-sm rounded-md border border-white/20">
+                                    <i class="fa-regular fa-image mr-1"></i> 情境參考
                                 </div>
-                                <button @click="copyToClipboard(event.address)" class="text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1.5 rounded-lg font-medium transition-colors">
-                                    複製地址
-                                </button>
+                            </div>
+
+                            <div class="p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="font-mono text-sm font-bold text-gray-400">{{ event.time }}</span>
+                                    <span v-if="event.tag" class="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-bold tracking-wider uppercase border border-stone-200">
+                                        {{ event.tag }}
+                                    </span>
+                                </div>
+                                
+                                <h3 class="font-bold text-lg leading-tight mb-2 text-sumi">{{ event.title }}</h3>
+                                
+                                <div class="text-sm text-gray-600 mb-4 leading-relaxed bg-stone-50 p-3 rounded-lg border border-stone-100">
+                                    <span v-if="event.guide" class="block text-xs text-matcha font-bold mb-1"><i class="fa-solid fa-user-tie mr-1"></i>導遊筆記：</span>
+                                    <span v-html="highlightText(event.desc)"></span>
+                                </div>
+
+                                <div v-if="event.address" class="flex items-center justify-between pt-2 border-t border-dashed border-gray-100">
+                                    <div class="text-xs text-gray-400 truncate max-w-[65%]">
+                                        <i class="fa-solid fa-location-dot mr-1"></i> {{ event.address }}
+                                    </div>
+                                    <button @click="copyToClipboard(event.address)" class="text-xs bg-stone-800 text-white active:bg-stone-600 px-3 py-2 rounded-lg font-medium transition-colors shadow-sm flex items-center gap-1">
+                                        <i class="fa-regular fa-copy"></i> 地址
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="text-center py-8 text-gray-400 text-sm">
-                    <p>— Day {{ selectedDayIndex + 1 }} 結束 —</p>
+                    <p>— Day {{ selectedDayIndex + 1 }} 行程結束 —</p>
                 </div>
             </div>
 
             <div v-if="currentView === 'tools'" class="px-5 py-4 pb-24 space-y-6">
-                
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
                     <h3 class="font-bold text-lg mb-4 border-b pb-2">✈️ 航班資訊</h3>
                     <div class="space-y-4">
@@ -169,7 +169,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
                     <h3 class="font-bold text-lg mb-4 border-b pb-2">🏨 住宿資訊</h3>
                     <div class="font-bold text-lg text-indigo-jp mb-1">LA PAIX SÀI GÒN</div>
@@ -182,21 +182,16 @@
                         <span>💰 簡易記帳</span>
                         <span class="text-matcha">{{ totalSpent.toLocaleString() }} VND</span>
                     </h3>
-                    
                     <div class="flex gap-2 mb-4">
                         <input v-model="newExpenseName" placeholder="項目" class="w-1/2 p-2 bg-stone-50 rounded-lg border border-stone-200 text-sm">
-                        <input v-model.number="newExpenseAmount" type="number" placeholder="金額 (VND)" class="w-1/3 p-2 bg-stone-50 rounded-lg border border-stone-200 text-sm">
-                        <button @click="addExpense" class="w-10 bg-sumi text-white rounded-lg flex items-center justify-center">
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
+                        <input v-model.number="newExpenseAmount" type="number" placeholder="金額" class="w-1/3 p-2 bg-stone-50 rounded-lg border border-stone-200 text-sm">
+                        <button @click="addExpense" class="w-10 bg-sumi text-white rounded-lg flex items-center justify-center"><i class="fa-solid fa-plus"></i></button>
                     </div>
-
                     <div class="space-y-2 max-h-40 overflow-y-auto">
-                        <div v-for="(item, idx) in expenses" :key="idx" class="flex justify-between text-sm py-1 border-b border-dashed border-gray-100 last:border-0">
+                        <div v-for="(item, idx) in expenses" :key="idx" class="flex justify-between text-sm py-1 border-b border-dashed border-gray-100">
                             <span>{{ item.name }}</span>
                             <span class="font-mono">{{ item.amount.toLocaleString() }}</span>
                         </div>
-                        <div v-if="expenses.length === 0" class="text-center text-gray-400 text-xs py-2">尚未新增項目</div>
                     </div>
                 </div>
 
@@ -205,12 +200,10 @@
                     <ul class="text-sm space-y-2 text-gray-700">
                         <li><span class="font-bold">報警：</span> 113</li>
                         <li><span class="font-bold">急救：</span> 115</li>
-                        <li><span class="font-bold">台灣駐胡志明辦事處：</span> +84-903-927-019</li>
+                        <li><span class="font-bold">台灣辦事處：</span> +84-903-927-019</li>
                     </ul>
                 </div>
-
             </div>
-
         </main>
 
         <nav class="bg-white border-t border-stone-200 px-6 py-3 flex justify-around items-center absolute bottom-0 w-full z-30 pb-6 safe-area-pb">
@@ -218,9 +211,7 @@
                 <i class="fa-solid fa-map-location-dot text-xl"></i>
                 <span class="text-[10px] font-medium">行程</span>
             </button>
-            
             <div class="w-px h-8 bg-stone-100"></div>
-
             <button @click="currentView = 'tools'" class="flex flex-col items-center gap-1 w-16 transition-colors duration-300" :class="currentView === 'tools' ? 'text-sumi' : 'text-gray-300'">
                 <i class="fa-solid fa-suitcase text-xl"></i>
                 <span class="text-[10px] font-medium">工具</span>
@@ -231,17 +222,11 @@
             <i class="fa-solid fa-circle-check text-matcha"></i>
             <span class="text-sm">{{ toast.message }}</span>
         </div>
-
     </div>
 
     <script>
-        // 確保 Vue 已載入
         document.addEventListener('DOMContentLoaded', () => {
-            if (typeof Vue === 'undefined') {
-                alert('App 載入失敗：請檢查網路連線 (Vue.js 無法載入)');
-                return;
-            }
-
+            if (typeof Vue === 'undefined') { alert('Error: Vue not loaded'); return; }
             const { createApp, ref, computed } = Vue;
 
             createApp({
@@ -251,154 +236,92 @@
                     const showWeather = ref(true);
                     const toast = ref({ show: false, message: '' });
                     
-                    // Expense Tracker Logic
                     const newExpenseName = ref('');
                     const newExpenseAmount = ref('');
-                    const expenses = ref([
-                        { name: '機場換匯預估', amount: 2500000 }
-                    ]);
-
+                    const expenses = ref([{ name: '機場換匯預估', amount: 2500000 }]);
                     const addExpense = () => {
                         if(newExpenseName.value && newExpenseAmount.value) {
-                            expenses.value.unshift({
-                                name: newExpenseName.value,
-                                amount: newExpenseAmount.value
-                            });
-                            newExpenseName.value = '';
-                            newExpenseAmount.value = '';
+                            expenses.value.unshift({ name: newExpenseName.value, amount: newExpenseAmount.value });
+                            newExpenseName.value = ''; newExpenseAmount.value = '';
                         }
                     };
+                    const totalSpent = computed(() => expenses.value.reduce((acc, item) => acc + item.amount, 0));
 
-                    const totalSpent = computed(() => {
-                        return expenses.value.reduce((acc, item) => acc + item.amount, 0);
-                    });
-
-                    // Itinerary Data
+                    // Enhanced Itinerary Data with Images and Guide Text
                     const itinerary = [
                         {
                             dateShort: "1/22 (四)",
                             events: [
-                                { time: "21:25", title: "抵達 SGN 機場", type: "transport", tag: "VIP通關", desc: "尋找舉牌人員走 VIP 通道。出關後記得先不上車，先換錢。", address: "Tan Son Nhat International Airport" },
-                                { time: "21:50", title: "機場換匯 & 網卡", type: "money", tag: "必辦", desc: "換 <b>$100 USD</b> 備用 (小費/車資)。確認網卡開通。", address: "Currency Exchange Counter, Arrivals Hall" },
-                                { time: "22:40", title: "飯店 Check-in", type: "hotel", tag: "LA PAIX", desc: "出示合併訂單。放下行李，準備宵夜。", address: "LA PAIX SÀI GÒN" },
-                                { time: "23:00", title: "Phở Quỳnh 宵夜", type: "food", tag: "必吃", desc: "范五老街名店。推薦：<b>生牛肉河粉 (Phở Tái)</b>。若太累可叫 Grab Food。", address: "323 Phạm Ngũ Lão, District 1" }
+                                { time: "21:25", title: "抵達 SGN 機場", type: "transport", tag: "VIP通關", guide: true, desc: "歡迎來到胡志明！下飛機後請直接尋找舉牌人員，我們走<b>VIP快速通道</b>，不用跟觀光客排隊。記得先不要叫車，先去換錢！", address: "Tan Son Nhat International Airport" },
+                                { time: "21:50", title: "機場換匯 & 網卡", type: "money", tag: "必辦", guide: true, desc: "先換 <b>$100 USD</b> 起來放身上，付車資和小費很方便。這時候也確認一下網卡有沒有訊號。", address: "Currency Exchange Counter" },
+                                { time: "23:00", title: "Phở Quỳnh 宵夜", type: "food", tag: "必吃", image: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這家是范五老街的不夜城名店！第一餐建議點最經典的<b>生牛肉河粉 (Phở Tái)</b>，湯頭濃郁這才是越南的味道。如果太累，直接 Grab 外送回飯店吃也很爽。", address: "323 Phạm Ngũ Lão, District 1" }
                             ]
                         },
                         {
                             dateShort: "1/23 (五)",
                             events: [
-                                { time: "09:30", title: "Phở Hòa Pasteur", type: "food", tag: "老店", desc: "口感較清淡，配油條吃是道地吃法。", address: "260C Pasteur, District 3" },
-                                { time: "10:30", title: "粉紅教堂", type: "sight", tag: "拍照", desc: "Tân Định Church。僅在對面馬路或旁邊咖啡廳拍照，不需入內。", address: "289 Hai Bà Trưng, District 3" },
-                                { time: "11:30", title: "Ha Tam Jewelry 換匯", type: "money", tag: "匯率優", desc: "濱城市場旁金飾店。準備好美金，換足夠的越盾。", address: "2 Nguyễn An Ninh, District 1" },
-                                { time: "12:30", title: "抵達 Le Corto", type: "transport", desc: "提早15分鐘抵達確認訂位。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
-                                { time: "12:45", title: "Le Corto 法式午餐", type: "food", tag: "重點行程", desc: "<b>已改期確認</b>。主廚 Sakal 曾任職索菲特。推薦必點：<b>威靈頓牛排</b>。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
-                                { time: "15:00", title: "King Luxury 洗頭", type: "relax", tag: "90mins", desc: "越式洗頭全套服務。含洗臉、按摩、採耳。", address: "222 Bùi Viện, District 1 (請確認分店)" },
-                                { time: "17:00", title: "咖啡公寓 & 步行街", type: "sight", desc: "阮惠步行街散步。推薦 <b>% Arabica</b> 或老舊公寓內的特色咖啡廳。", address: "42 Nguyễn Huệ, District 1" },
-                                { time: "18:30", title: "Pizza 4P's", type: "food", tag: "人氣", desc: "濱城市場店。必點：<b>Burrata Cheese Pizza</b> (整顆布拉塔起司)。", address: "8 Thủ Khoa Huân, District 1" },
-                                { time: "20:30", title: "日本街 & Cherry", type: "night", tag: "夜生活", desc: "Le Thanh Ton 區域探索。", address: "Lê Thánh Tôn, District 1" }
+                                { time: "09:30", title: "Phở Hòa Pasteur", type: "food", tag: "老店", image: "https://images.unsplash.com/photo-1635586617349-38379051cc37?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "早安！我們來這間在地人也愛的 <b>Phở Hòa</b>。它的湯頭比昨晚的清淡一些，桌上的油條(Quẩy)記得泡湯吃，這是內行人的吃法。", address: "260C Pasteur, District 3" },
+                                { time: "10:30", title: "粉紅教堂", type: "sight", tag: "打卡", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這座粉紅色的<b>Tân Định Church</b>是胡志明最夢幻的地標！我們不用進去(裡面通常不開放)，在對面馬路拍幾張美照就足夠了，配色非常可愛。", address: "289 Hai Bà Trưng, District 3" },
+                                { time: "11:30", title: "Ha Tam Jewelry 換匯", type: "money", tag: "換錢", desc: "濱城市場旁金飾店，匯率通常最好。請準備好美金，一次換足後幾天的盤纏。", address: "2 Nguyễn An Ninh, District 1" },
+                                { time: "12:45", title: "Le Corto 法式午餐", type: "food", tag: "米其林推薦", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "重頭戲來了！主廚 Sakal 曾是索菲特飯店的行政主廚。這裡的氛圍優雅輕鬆，務必嘗試他們的<b>威靈頓牛排</b>，酥皮與肉汁的完美結合。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
+                                { time: "15:00", title: "King Luxury 洗頭", type: "relax", tag: "90mins", image: "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "吃飽後不要動，來體驗傳說中的越式洗頭。這不只是洗頭，包含洗臉、採耳、按摩，這90分鐘你會舒服到睡著。", address: "222 Bùi Viện, District 1" },
+                                { time: "17:00", title: "咖啡公寓 & 步行街", type: "sight", tag: "散步", image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "洗完頭神清氣爽，來這棟充滿文青氣息的老公寓。可以選一家有陽台的咖啡廳看著下面的人潮，感受胡志明的活力。", address: "42 Nguyễn Huệ, District 1" },
+                                { time: "18:30", title: "Pizza 4P's", type: "food", tag: "超人氣", image: "https://images.unsplash.com/photo-1595295333158-4742f28fbd85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這家是越南最成功的 Pizza 品牌！必點桌邊現切的 <b>Burrata Cheese Pizza</b>，那顆白白胖胖的起司切開來配著披薩吃，超級銷魂。", address: "8 Thủ Khoa Huân, District 1" }
                             ]
                         },
                         {
                             dateShort: "1/24 (六)",
                             events: [
-                                { time: "10:00", title: "Bánh Mì Huynh Hoa", type: "food", tag: "最強法包", desc: "<b>料超級多</b>，建議兩個人分食或當點心，不要吃太飽以免影響午餐。", address: "26 Lê Thị Riêng, District 1" },
-                                { time: "11:00", title: "安東市場 & 天后宮", type: "shop", tag: "買腰果", desc: "第五郡華人區。買乾貨記得<b>現金殺價</b> (至少從7-8折喊起)。", address: "An Dong Market, District 5" },
-                                { time: "13:00", title: "Wrap & Roll", type: "food", tag: "清爽", desc: "專吃生春捲，清爽不油膩，為晚上的龍蝦保留戰力。", address: "Vincom Center 或 mPlaza 分店" },
-                                { time: "15:00", title: "Satra Mart 採購", type: "shop", tag: "土特產", desc: "Lucky Plaza 內。買：河粉泡麵、G7咖啡、綠豆糕。", address: "38 Nguyễn Huệ (Lucky Plaza)" },
-                                { time: "16:00", title: "維東酒店 按摩", type: "relax", desc: "老牌按摩，逛累了剛好去二樓休息。", address: "275A Phạm Ngũ Lão (Vien Dong Hotel)" },
-                                { time: "18:00", title: "Nikko Hotel 龍蝦吃到飽", type: "food", tag: "高潮", desc: "<b>已改期確認</b>。La Brasserie 餐廳。主攻：<b>波士頓龍蝦</b> (多種口味任點)、生蠔、鵝肝。", address: "235 Nguyen Van Cu, District 1" }
+                                { time: "10:00", title: "Bánh Mì Huynh Hoa", type: "food", tag: "越法麵包", image: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "號稱胡志明最好吃的法國麵包！<b>肉片和配料多到滿出來</b>，建議不要一人吃一整條，分著吃當早午餐點心剛好。", address: "26 Lê Thị Riêng, District 1" },
+                                { time: "11:00", title: "安東市場 & 天后宮", type: "shop", tag: "買腰果", guide: true, desc: "來這裡就是要買伴手禮。買腰果、果乾記得<b>一定要殺價</b>，從七折開始喊，現金交易。逛完去旁邊天后宮求個平安。", address: "An Dong Market, District 5" },
+                                { time: "13:00", title: "Wrap & Roll", type: "food", tag: "清爽午餐", guide: true, desc: "中午吃點清爽的生春捲，減少腸胃負擔，因為晚上有大餐在等著我們！", address: "Vincom Center 分店" },
+                                { time: "15:00", title: "Satra Mart 採購", type: "shop", tag: "超市", desc: "在 Lucky Plaza 裡面。這時候把要帶回台灣的河粉泡麵、G7咖啡、綠豆糕一次買齊。", address: "38 Nguyễn Huệ" },
+                                { time: "16:00", title: "維東酒店 按摩", type: "relax", tag: "老牌", desc: "逛街逛累了吧？這家就在范五老街附近，去二樓按個腳，為晚上的戰鬥做準備。", address: "275A Phạm Ngũ Lão" },
+                                { time: "18:00", title: "Nikko Hotel 龍蝦吃到飽", type: "food", tag: "高潮", image: "https://images.unsplash.com/photo-1559847844-5315695dadae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "<b>本次行程最高潮！</b> La Brasserie 餐廳。這裡的重點就是：<b>波士頓龍蝦無限吃</b>。有起司焗烤、蒜蓉蒸等多種口味，還有生蠔和鵝肝，請盡情享用！", address: "235 Nguyen Van Cu, District 1" }
                             ]
                         },
                         {
                             dateShort: "1/25 (日)",
                             events: [
-                                { time: "上午", title: "腸胃公休", type: "relax", tag: "休息", desc: "睡到自然醒。多喝水，讓身體代謝昨晚的海鮮大餐。", address: "" },
-                                { time: "12:00", title: "書街咖啡 / 麥當勞", type: "food", desc: "隨意輕食。越南麥當勞有當地限定米飯特餐。", address: "Nguyen Van Binh Book Street" },
-                                { time: "13:00", title: "黃金三角古蹟", type: "sight", tag: "經典", desc: "紅教堂 (維修中看外觀) -> 中央郵局 (寄明信片) -> 書街。", address: "2 Công xã Paris, District 1" },
-                                { time: "14:30", title: "胡志明市美術博物館", type: "sight", tag: "好拍", desc: "鵝黃色法式建築，前身為華商「黃叔璡」豪宅。<b>有電梯、冷氣</b>，逛起來很舒服。", address: "97A Phó Đức Chính, District 1" },
-                                { time: "16:00", title: "Miu Miu Spa 2", type: "relax", tag: "日式指壓", desc: "服務品質最穩定的按摩店之一。結束後一身輕。", address: "2B Chu Mạnh Trinh, District 1" },
-                                { time: "18:00", title: "Bếp Mẹ Ỉn (胖媽廚房)", type: "food", tag: "必吃", desc: "隱身巷弄內。必點：<b>越南煎餅 (Bánh Xèo)</b>、竹筒飯。", address: "136 Lê Thánh Tôn, District 1" }
+                                { time: "上午", title: "腸胃公休", type: "relax", tag: "休息", guide: true, desc: "昨晚吃太好，今天早上睡到自然醒。多喝水，讓身體代謝一下，不排早餐行程。", address: "" },
+                                { time: "13:00", title: "黃金三角古蹟", type: "sight", tag: "經典路線", image: "https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這一區是法國殖民時期的精華。<b>紅教堂</b>看外觀，<b>中央郵局</b>進去寄張明信片，然後去旁邊充滿綠意的<b>書街</b>散步，非常舒服。", address: "2 Công xã Paris, District 1" },
+                                { time: "14:30", title: "胡志明市美術博物館", type: "sight", tag: "好拍", image: "https://images.unsplash.com/photo-1582767098495-23c31627c24a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這棟鵝黃色的法式建築以前是富商的豪宅。重點是：<b>有電梯、有冷氣</b>！在裡面吹冷氣看展覽、拍拍復古花磚地板，完全不會累。", address: "97A Phó Đức Chính, District 1" },
+                                { time: "16:00", title: "Miu Miu Spa 2", type: "relax", tag: "日式指壓", guide: true, desc: "胡志明品質最穩定的按摩店，走日式服務風格。這是最後一次按摩了，好好放鬆全身肌肉。", address: "2B Chu Mạnh Trinh" },
+                                { time: "18:00", title: "Bếp Mẹ Ỉn (胖媽廚房)", type: "food", tag: "完美收尾", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "隱藏在濱城市場旁巷弄內的小店。必點巨大的<b>越南煎餅 (Bánh Xèo)</b>，店員會幫你剪開，包著生菜吃，清脆爽口，是完美的 Ending。", address: "136 Lê Thánh Tôn, District 1" }
                             ]
                         },
                         {
                             dateShort: "1/26 (一)",
                             events: [
-                                { time: "09:30", title: "Phở Hồng", type: "food", tag: "最後一碗", desc: "飯店對面。湯頭鮮甜，吃飽準備去機場。", address: "76 Hai Bà Trưng (可能需再確認地址或當地導航)" },
-                                { time: "10:45", title: "退房 & 前往機場", type: "transport", desc: "搭乘 Grab 前往 SGN 機場。", address: "Tan Son Nhat International Airport" },
-                                { time: "11:30", title: "機場 VIP 送機", type: "transport", tag: "VIP", desc: "與 VIP 客服會合，協助辦理登機與通關。", address: "SGN International Departure" },
-                                { time: "13:35", title: "起飛 VJ842", type: "transport", tag: "回家", desc: "平安賦歸。", address: "" }
+                                { time: "09:30", title: "Phở Hồng", type: "food", tag: "最後一碗", desc: "就在飯店對面，離開前再來一碗熱騰騰的河粉，暖暖胃。", address: "76 Hai Bà Trưng" },
+                                { time: "10:45", title: "退房 & 前往機場", type: "transport", desc: "打開 Grab，目標 SGN 機場。再見了胡志明！", address: "Tan Son Nhat International Airport" },
+                                { time: "11:30", title: "機場 VIP 送機", type: "transport", tag: "VIP", desc: "與 VIP 客服會合，享受最後一次快速通關禮遇。", address: "SGN International Departure" }
                             ]
                         }
                     ];
 
-                    const currentDayEvents = computed(() => {
-                        return itinerary[selectedDayIndex.value].events;
-                    });
+                    const currentDayEvents = computed(() => itinerary[selectedDayIndex.value].events);
+                    const getCategoryColor = (type) => ({
+                        food: 'bg-sakura', sight: 'bg-matcha', transport: 'bg-blue-400',
+                        relax: 'bg-purple-400', money: 'bg-yellow-400', hotel: 'bg-indigo-400',
+                        shop: 'bg-orange-400', night: 'bg-pink-600'
+                    }[type] || 'bg-gray-400');
 
-                    const getCategoryColor = (type) => {
-                        const map = {
-                            food: 'bg-sakura',
-                            sight: 'bg-matcha',
-                            transport: 'bg-blue-400',
-                            relax: 'bg-purple-400',
-                            money: 'bg-yellow-400',
-                            hotel: 'bg-indigo-400',
-                            shop: 'bg-orange-400',
-                            night: 'bg-pink-600'
-                        };
-                        return map[type] || 'bg-gray-400';
-                    };
-
-                    const highlightText = (text) => {
-                        if (!text) return '';
-                        return text.replace(/<b>(.*?)<\/b>/g, '<span class="font-bold text-sumi bg-yellow-100 px-1 rounded">$1</span>');
-                    };
-
+                    const highlightText = (text) => text ? text.replace(/<b>(.*?)<\/b>/g, '<span class="font-bold text-sumi bg-yellow-100 px-1 rounded shadow-sm">$1</span>') : '';
+                    
                     const copyToClipboard = (text) => {
                         if(!text) return;
-                        navigator.clipboard.writeText(text).then(() => {
-                            showToast(`已複製：${text}`);
-                        }).catch(() => {
-                            // 某些瀏覽器不支援 clipboard API 時的備案
-                            const textarea = document.createElement('textarea');
-                            textarea.value = text;
-                            document.body.appendChild(textarea);
-                            textarea.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(textarea);
-                            showToast(`已複製：${text}`);
-                        });
+                        navigator.clipboard.writeText(text).then(() => showToast(`已複製：${text}`))
+                            .catch(() => {
+                                const ta = document.createElement('textarea'); ta.value = text;
+                                document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+                                document.body.removeChild(ta); showToast(`已複製：${text}`);
+                            });
                     };
+                    const showToast = (msg) => { toast.value.message = msg; toast.value.show = true; setTimeout(() => toast.value.show = false, 2000); };
+                    const toggleWeather = () => showWeather.value = !showWeather.value;
 
-                    const showToast = (msg) => {
-                        toast.value.message = msg;
-                        toast.value.show = true;
-                        setTimeout(() => {
-                            toast.value.show = false;
-                        }, 2000);
-                    };
-                    
-                    const toggleWeather = () => {
-                        showWeather.value = !showWeather.value;
-                    }
-
-                    return {
-                        currentView,
-                        selectedDayIndex,
-                        itinerary,
-                        currentDayEvents,
-                        getCategoryColor,
-                        highlightText,
-                        copyToClipboard,
-                        toast,
-                        expenses,
-                        newExpenseName,
-                        newExpenseAmount,
-                        addExpense,
-                        totalSpent,
-                        showWeather,
-                        toggleWeather
-                    };
+                    return { currentView, selectedDayIndex, itinerary, currentDayEvents, getCategoryColor, highlightText, copyToClipboard, toast, expenses, newExpenseName, newExpenseAmount, addExpense, totalSpent, showWeather, toggleWeather };
                 }
             }).mount('#app');
         });
