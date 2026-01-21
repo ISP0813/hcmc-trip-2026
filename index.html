@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HCMC 2026 旅程</title>
+    <title>HCMC 2026 行程表</title>
     
     <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkhDTUMgMjAyNiIsCiAgInNob3J0X25hbWUiOiAiVk4gVHJpcCIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmRmYmY3IiwKICAidGhlbWVfY29sb3IiOiAiIzU3NTM0ZSIKfQ==">
     
@@ -28,7 +28,6 @@
         #toast-container { display: none; }
         #toast-container.active { display: flex; }
         
-        /* 圖片載入時的淡入效果 */
         .fade-in-image { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -53,11 +52,11 @@
 
     <div id="app" class="flex flex-col h-full" v-cloak>
 
-        <header class="pt-12 pb-4 px-6 bg-paper sticky top-0 z-20 shadow-sm">
+        <header class="pt-12 pb-4 px-6 bg-paper sticky top-0 z-20 shadow-sm border-b border-stone-100">
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight">HCMC <span class="text-matcha">2026</span></h1>
-                    <p class="text-xs text-gray-500 mt-1">1月22日 - 1月26日</p>
+                    <p class="text-xs text-gray-500 mt-1">1月22日 - 1月26日 (V19.2)</p>
                 </div>
                 <div class="bg-stone-200 rounded-full p-2 cursor-pointer hover:bg-stone-300 transition" @click="toggleWeather">
                     <i class="fa-solid fa-cloud-sun text-xl text-gray-600"></i>
@@ -143,13 +142,13 @@
 
             <div v-if="currentView === 'tools'" class="px-5 py-4 pb-24 space-y-6">
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
-                    <h3 class="font-bold text-lg mb-4 border-b pb-2">✈️ 航班資訊</h3>
+                    <h3 class="font-bold text-lg mb-4 border-b pb-2">✈️ 航班資訊 (V19)</h3>
                     <div class="space-y-4">
                         <div class="flex justify-between items-center">
                             <div>
                                 <div class="text-xs text-gray-400">去程 (1/22)</div>
                                 <div class="font-bold text-xl">VJ843</div>
-                                <div class="text-sm text-matcha">晚班抵達</div>
+                                <div class="text-sm text-matcha">19:00 起飛</div>
                             </div>
                             <div class="text-right">
                                 <div class="text-xs text-gray-400">抵達 SGN</div>
@@ -160,11 +159,11 @@
                             <div>
                                 <div class="text-xs text-gray-400">回程 (1/26)</div>
                                 <div class="font-bold text-xl">VJ842</div>
-                                <div class="text-sm text-sakura">午後回程</div>
+                                <div class="text-sm text-sakura">13:35 起飛</div>
                             </div>
                             <div class="text-right">
-                                <div class="text-xs text-gray-400">起飛 SGN</div>
-                                <div class="font-bold">13:35</div>
+                                <div class="text-xs text-gray-400">抵達 TPE</div>
+                                <div class="font-bold">18:00</div>
                             </div>
                         </div>
                     </div>
@@ -172,9 +171,10 @@
                 
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
                     <h3 class="font-bold text-lg mb-4 border-b pb-2">🏨 住宿資訊</h3>
-                    <div class="font-bold text-lg text-indigo-jp mb-1">LA PAIX SÀI GÒN</div>
-                    <p class="text-sm text-gray-500 mb-3">請出示合併訂單訊息進行 Check-in</p>
-                    <button @click="copyToClipboard('LA PAIX SÀI GÒN')" class="w-full py-2 bg-stone-100 text-stone-600 rounded-lg text-sm font-medium">複製飯店名稱</button>
+                    <div class="font-bold text-lg text-indigo-jp mb-1">La Paix Saigon</div>
+                    <div class="text-xs text-gray-400 mb-2">Boutique Hotel (24-26 Dong Du)</div>
+                    <p class="text-sm text-gray-500 mb-3">請出示訂單。進出請選 Grab Car Plus 大車較舒適。</p>
+                    <button @click="copyToClipboard('24 Đông Du, Bến Nghé, Quận 1, Thành phố Hồ Chí Minh')" class="w-full py-2 bg-stone-100 text-stone-600 rounded-lg text-sm font-medium">複製飯店地址</button>
                 </div>
 
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-stone-100">
@@ -238,7 +238,7 @@
                     
                     const newExpenseName = ref('');
                     const newExpenseAmount = ref('');
-                    const expenses = ref([{ name: '機場換匯預估', amount: 2500000 }]);
+                    const expenses = ref([{ name: '機場換匯預估', amount: 3000000 }]);
                     const addExpense = () => {
                         if(newExpenseName.value && newExpenseAmount.value) {
                             expenses.value.unshift({ name: newExpenseName.value, amount: newExpenseAmount.value });
@@ -247,55 +247,61 @@
                     };
                     const totalSpent = computed(() => expenses.value.reduce((acc, item) => acc + item.amount, 0));
 
-                    // Enhanced Itinerary Data with Images and Guide Text
+                    // V19.2 Final Itinerary Data
                     const itinerary = [
                         {
                             dateShort: "1/22 (四)",
                             events: [
-                                { time: "21:25", title: "抵達 SGN 機場", type: "transport", tag: "VIP通關", guide: true, desc: "歡迎來到胡志明！下飛機後請直接尋找舉牌人員，我們走<b>VIP快速通道</b>，不用跟觀光客排隊。記得先不要叫車，先去換錢！", address: "Tan Son Nhat International Airport" },
-                                { time: "21:50", title: "機場換匯 & 網卡", type: "money", tag: "必辦", guide: true, desc: "先換 <b>$100 USD</b> 起來放身上，付車資和小費很方便。這時候也確認一下網卡有沒有訊號。", address: "Currency Exchange Counter" },
-                                { time: "23:00", title: "Phở Quỳnh 宵夜", type: "food", tag: "必吃", image: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這家是范五老街的不夜城名店！第一餐建議點最經典的<b>生牛肉河粉 (Phở Tái)</b>，湯頭濃郁這才是越南的味道。如果太累，直接 Grab 外送回飯店吃也很爽。", address: "323 Phạm Ngũ Lão, District 1" }
+                                { time: "15:40", title: "前往桃園機場", type: "transport", desc: "優雅轉場。叫 Uber 前往 T1。", address: "Taoyuan International Airport Terminal 1" },
+                                { time: "21:25", title: "抵達 SGN 胡志明", type: "transport", tag: "VIP通關", guide: true, desc: "走快速通道出關。打開 Grab 叫車，記得選 <b>Car Plus (大車)</b> 坐起來才舒服。定位：La Paix Saigon。", address: "Tan Son Nhat International Airport" },
+                                { time: "23:00", title: "Check-in La Paix", type: "hotel", tag: "精品飯店", desc: "辦理入住，放下行李。", address: "24-26 Đông Du, Bến Nghé, Quận 1" },
+                                { time: "23:30", title: "宵夜場", type: "food", tag: "必吃", image: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "去吃 <b>Phở Quỳnh</b> 生牛肉河粉。吃完去旁邊范五老街 (Bùi Viện) 感受氣氛，推薦 The View Rooftop Bar。<b>切記：只看、不玩。</b>", address: "323 Phạm Ngũ Lão, District 1" }
                             ]
                         },
                         {
                             dateShort: "1/23 (五)",
                             events: [
-                                { time: "09:30", title: "Phở Hòa Pasteur", type: "food", tag: "老店", image: "https://images.unsplash.com/photo-1635586617349-38379051cc37?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "早安！我們來這間在地人也愛的 <b>Phở Hòa</b>。它的湯頭比昨晚的清淡一些，桌上的油條(Quẩy)記得泡湯吃，這是內行人的吃法。", address: "260C Pasteur, District 3" },
-                                { time: "10:30", title: "粉紅教堂", type: "sight", tag: "打卡", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這座粉紅色的<b>Tân Định Church</b>是胡志明最夢幻的地標！我們不用進去(裡面通常不開放)，在對面馬路拍幾張美照就足夠了，配色非常可愛。", address: "289 Hai Bà Trưng, District 3" },
-                                { time: "11:30", title: "Ha Tam Jewelry 換匯", type: "money", tag: "換錢", desc: "濱城市場旁金飾店，匯率通常最好。請準備好美金，一次換足後幾天的盤纏。", address: "2 Nguyễn An Ninh, District 1" },
-                                { time: "12:45", title: "Le Corto 法式午餐", type: "food", tag: "米其林推薦", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "重頭戲來了！主廚 Sakal 曾是索菲特飯店的行政主廚。這裡的氛圍優雅輕鬆，務必嘗試他們的<b>威靈頓牛排</b>，酥皮與肉汁的完美結合。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
-                                { time: "15:00", title: "King Luxury 洗頭", type: "relax", tag: "90mins", image: "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "吃飽後不要動，來體驗傳說中的越式洗頭。這不只是洗頭，包含洗臉、採耳、按摩，這90分鐘你會舒服到睡著。", address: "222 Bùi Viện, District 1" },
-                                { time: "17:00", title: "咖啡公寓 & 步行街", type: "sight", tag: "散步", image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "洗完頭神清氣爽，來這棟充滿文青氣息的老公寓。可以選一家有陽台的咖啡廳看著下面的人潮，感受胡志明的活力。", address: "42 Nguyễn Huệ, District 1" },
-                                { time: "18:30", title: "Pizza 4P's", type: "food", tag: "超人氣", image: "https://images.unsplash.com/photo-1595295333158-4742f28fbd85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這家是越南最成功的 Pizza 品牌！必點桌邊現切的 <b>Burrata Cheese Pizza</b>，那顆白白胖胖的起司切開來配著披薩吃，超級銷魂。", address: "8 Thủ Khoa Huân, District 1" }
+                                { time: "09:30", title: "Phở Hòa Pasteur", type: "food", tag: "老店", image: "https://images.unsplash.com/photo-1635586617349-38379051cc37?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "經典老店早餐。湯頭清甜，記得配桌上的油條吃。", address: "260C Pasteur, District 3" },
+                                { time: "10:15", title: "Biti's 買鞋", type: "shop", tag: "任務", image: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "就在河粉店這條路往回走。試穿越南國民品牌 <b>Biti's Hunter</b>。請店員直接找 <b>Size 44-45 以上</b>，務必試穿走走看，確認鞋底支撐力夠不夠。", address: "290 Hai Bà Trưng, Tân Định, Quận 1" },
+                                { time: "11:00", title: "粉紅教堂", type: "sight", tag: "拍照", image: "https://images.unsplash.com/photo-1583417319070-4a69db38a482?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", desc: "Tân Định Church。就在 Biti's 附近，順路拍照。", address: "289 Hai Bà Trưng, District 3" },
+                                { time: "11:30", title: "Ha Tam Jewelry 換匯", type: "money", tag: "換錢", desc: "濱城市場旁。策略：先拿出 <b>$100 美金大鈔</b>換，不夠再用台幣。", address: "2 Nguyễn An Ninh, District 1" },
+                                { time: "12:30", title: "Le Corto 法式午餐", type: "food", tag: "CP值高", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "預約 12:45。享用超值的<b>法式商業午餐</b>。氣氛好，慢慢吃。", address: "5D Nguyễn Siêu, Bến Nghé, District 1" },
+                                { time: "15:00", title: "King Luxury 洗頭", type: "relax", tag: "越式洗頭", image: "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "洗臉、洗頭、掏耳一次滿足。徹底放鬆。", address: "222 Bùi Viện, District 1" },
+                                { time: "18:30", title: "Pizza 4P's", type: "food", tag: "晚餐", guide: true, desc: "Ben Thanh 分店。推薦：<b>Burrata Cheese Pizza</b>。", address: "8 Thủ Khoa Huân, District 1" },
+                                { time: "20:00", title: "日本街 Cherry", type: "night", tag: "夜生活", desc: "提早進場避開人潮。地址在 Thai Van Lung。", address: "8a Thái Văn Lung, Bến Nghé, District 1" }
                             ]
                         },
                         {
                             dateShort: "1/24 (六)",
                             events: [
-                                { time: "10:00", title: "Bánh Mì Huynh Hoa", type: "food", tag: "越法麵包", image: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "號稱胡志明最好吃的法國麵包！<b>肉片和配料多到滿出來</b>，建議不要一人吃一整條，分著吃當早午餐點心剛好。", address: "26 Lê Thị Riêng, District 1" },
-                                { time: "11:00", title: "安東市場 & 天后宮", type: "shop", tag: "買腰果", guide: true, desc: "來這裡就是要買伴手禮。買腰果、果乾記得<b>一定要殺價</b>，從七折開始喊，現金交易。逛完去旁邊天后宮求個平安。", address: "An Dong Market, District 5" },
-                                { time: "13:00", title: "Wrap & Roll", type: "food", tag: "清爽午餐", guide: true, desc: "中午吃點清爽的生春捲，減少腸胃負擔，因為晚上有大餐在等著我們！", address: "Vincom Center 分店" },
-                                { time: "15:00", title: "Satra Mart 採購", type: "shop", tag: "超市", desc: "在 Lucky Plaza 裡面。這時候把要帶回台灣的河粉泡麵、G7咖啡、綠豆糕一次買齊。", address: "38 Nguyễn Huệ" },
-                                { time: "16:00", title: "維東酒店 按摩", type: "relax", tag: "老牌", desc: "逛街逛累了吧？這家就在范五老街附近，去二樓按個腳，為晚上的戰鬥做準備。", address: "275A Phạm Ngũ Lão" },
-                                { time: "18:00", title: "Nikko Hotel 龍蝦吃到飽", type: "food", tag: "高潮", image: "https://images.unsplash.com/photo-1559847844-5315695dadae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "<b>本次行程最高潮！</b> La Brasserie 餐廳。這裡的重點就是：<b>波士頓龍蝦無限吃</b>。有起司焗烤、蒜蓉蒸等多種口味，還有生蠔和鵝肝，請盡情享用！", address: "235 Nguyen Van Cu, District 1" }
+                                { time: "09:30", title: "Bánh Mì Huỳnh Hoa", type: "food", tag: "最強法棍", image: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "帶在車上吃或現場解決。料超級多，不要吃太撐。", address: "26 Lê Thị Riêng, District 1" },
+                                { time: "10:30", title: "第五郡文化之旅", type: "sight", tag: "唐人街", image: "https://images.unsplash.com/photo-1582767098495-23c31627c24a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "全程 Grab 移動。1. <b>天后宮</b> (看盤香) -> 2. <b>關帝廟</b> (看赤兔馬) -> 3. <b>茶譚教堂</b> (漢字教堂)。", address: "710 Nguyễn Trãi, District 5 (天后宮)" },
+                                { time: "12:30", title: "東源雞飯", type: "food", tag: "午餐", desc: "點<b>海南雞飯 + 燉湯</b>。份量適中，保留戰力給晚上的龍蝦。", address: "801 Nguyễn Trãi, District 5" },
+                                { time: "13:30", title: "安東市場", type: "shop", tag: "採購", desc: "買<b>帶皮腰果</b>。買完回飯店放戰利品。", address: "34-36 An Dương Vương, District 5" },
+                                { time: "16:00", title: "維東酒店按摩", type: "relax", tag: "老牌", desc: "記得準備 100k-200k 小費給師傅。", address: "275A Phạm Ngũ Lão" },
+                                { time: "18:00", title: "Nikko Hotel 龍蝦吃到飽", type: "food", tag: "重頭戲", image: "https://images.unsplash.com/photo-1559847844-5315695dadae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "La Brasserie 餐廳。龍蝦、生蠔、紅白酒<b>無限供應</b>。盡情享受！", address: "235 Nguyen Van Cu, District 1" }
                             ]
                         },
                         {
                             dateShort: "1/25 (日)",
                             events: [
-                                { time: "上午", title: "腸胃公休", type: "relax", tag: "休息", guide: true, desc: "昨晚吃太好，今天早上睡到自然醒。多喝水，讓身體代謝一下，不排早餐行程。", address: "" },
-                                { time: "13:00", title: "黃金三角古蹟", type: "sight", tag: "經典路線", image: "https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這一區是法國殖民時期的精華。<b>紅教堂</b>看外觀，<b>中央郵局</b>進去寄張明信片，然後去旁邊充滿綠意的<b>書街</b>散步，非常舒服。", address: "2 Công xã Paris, District 1" },
-                                { time: "14:30", title: "胡志明市美術博物館", type: "sight", tag: "好拍", image: "https://images.unsplash.com/photo-1582767098495-23c31627c24a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "這棟鵝黃色的法式建築以前是富商的豪宅。重點是：<b>有電梯、有冷氣</b>！在裡面吹冷氣看展覽、拍拍復古花磚地板，完全不會累。", address: "97A Phó Đức Chính, District 1" },
-                                { time: "16:00", title: "Miu Miu Spa 2", type: "relax", tag: "日式指壓", guide: true, desc: "胡志明品質最穩定的按摩店，走日式服務風格。這是最後一次按摩了，好好放鬆全身肌肉。", address: "2B Chu Mạnh Trinh" },
-                                { time: "18:00", title: "Bếp Mẹ Ỉn (胖媽廚房)", type: "food", tag: "完美收尾", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "隱藏在濱城市場旁巷弄內的小店。必點巨大的<b>越南煎餅 (Bánh Xèo)</b>，店員會幫你剪開，包著生菜吃，清脆爽口，是完美的 Ending。", address: "136 Lê Thánh Tôn, District 1" }
+                                { time: "10:00", title: "Takashimaya 購物", type: "shop", tag: "精品", image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "Saigon Centre B2 超市。買 <b>Marou 巧克力</b> 和高級茶葉。", address: "92-94 Nam Kỳ Khởi Nghĩa, Bến Nghé, Quận 1" },
+                                { time: "11:00", title: "Saigon Square", type: "shop", tag: "A貨戰場", guide: true, desc: "就在對面。買仿名牌衣物鞋子。<b>殺價是必須的</b>，建議從對折開始喊。", address: "77-89 Nam Kỳ Khởi Nghĩa, District 1" },
+                                { time: "12:30", title: "書街周邊午餐", type: "food", desc: "在書街旁麥當勞或咖啡廳簡單吃。", address: "Nguyen Van Binh Book Street" },
+                                { time: "13:30", title: "法式建築巡禮", type: "sight", tag: "古蹟", image: "https://images.unsplash.com/photo-1577717903315-1691ae25ab3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", desc: "郵局 -> 紅教堂 (外觀) -> 書街。", address: "2 Công xã Paris, District 1" },
+                                { time: "14:30", title: "胡志明市博物館", type: "sight", tag: "防空洞", guide: true, desc: "買票參觀。看<b>旋轉樓梯</b>與<b>地下碉堡</b>。", address: "65 Lý Tự Trọng, District 1" },
+                                { time: "15:30", title: "美術博物館", type: "sight", tag: "黃色建築", desc: "參觀法式黃色建築，非常好拍。", address: "97A Phó Đức Chính, District 1" },
+                                { time: "16:30", title: "Miu Miu Spa 2", type: "relax", tag: "紓壓", guide: true, desc: "帶著滿滿的戰利品來放鬆。預約 <b>Package 1</b> (60分身體 + 60分腳底)。", address: "2B Chu Mạnh Trinh, District 1" },
+                                { time: "18:30", title: "Bếp Mẹ Ỉn 胖媽廚房", type: "food", tag: "越式", desc: "濱城店。吃傳統越式料理。", address: "136 Lê Thánh Tôn, District 1" },
+                                { time: "20:00", title: "賭場體驗", type: "night", tag: "試手氣", image: "https://images.unsplash.com/photo-1596838132731-3301c3fd4317?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", guide: true, desc: "Club Royale 或 Vegas Club。<b>資金控管：</b>只帶藍色美金新鈔去玩。", address: "1 Ngô Đức Kế (Renaissance Riverside Hotel)" }
                             ]
                         },
                         {
                             dateShort: "1/26 (一)",
                             events: [
-                                { time: "09:30", title: "Phở Hồng", type: "food", tag: "最後一碗", desc: "就在飯店對面，離開前再來一碗熱騰騰的河粉，暖暖胃。", address: "76 Hai Bà Trưng" },
-                                { time: "10:45", title: "退房 & 前往機場", type: "transport", desc: "打開 Grab，目標 SGN 機場。再見了胡志明！", address: "Tan Son Nhat International Airport" },
-                                { time: "11:30", title: "機場 VIP 送機", type: "transport", tag: "VIP", desc: "與 VIP 客服會合，享受最後一次快速通關禮遇。", address: "SGN International Departure" }
+                                { time: "09:30", title: "The Running Bean", type: "food", tag: "早午餐", desc: "離飯店 3 分鐘，精緻早午餐，優雅回歸。", address: "33 Mạc Thị Bưởi, District 1" },
+                                { time: "10:45", title: "退房 & 前往機場", type: "transport", desc: "叫 Grab Car Plus 前往 SGN 機場。", address: "Tan Son Nhat International Airport" },
+                                { time: "13:35", title: "起飛 VJ842", type: "transport", tag: "回家", desc: "預計 18:00 抵達桃園機場。", address: "" }
                             ]
                         }
                     ];
